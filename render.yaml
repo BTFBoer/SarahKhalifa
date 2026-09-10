@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: mia-proxy
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: DEEPSEEK_API_KEY
+        sync: false
