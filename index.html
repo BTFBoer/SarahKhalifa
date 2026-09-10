@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat — Mia Khalifa</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0b141a; display: flex; justify-content: center;
+    align-items: center; min-height: 100vh; padding: 12px;
+  }
+  .app {
+    width: 100%; max-width: 460px; height: 92vh; max-height: 760px;
+    background: #111b21; border-radius: 14px; display: flex;
+    flex-direction: column; overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0,0,0,.55); border: 1px solid #2a3942;
+  }
+  header {
+    background: #202c33; padding: 10px 14px; display: flex;
+    align-items: center; gap: 12px; border-bottom: 1px solid #2a3942;
+  }
+  .avatar {
+    width: 42px; height: 42px; border-radius: 50%;
+    background: linear-gradient(135deg, #b8860b, #7a2e0e);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: 15px; position: relative;
+  }
+  .avatar::after {
+    content: ""; position: absolute; bottom: 0; right: 0;
+    width: 11px; height: 11px; background: #25d366;
+    border-radius: 50%; border: 2px solid #202c33;
+  }
+  .hinfo { flex: 1; min-width: 0; }
+  .hinfo .n { color: #e9edef; font-weight: 600; font-size: 15px; }
+  .hinfo .s { color: #25d366; font-size: 12px; font-weight: 500; }
+  header .icons { color: #aebac1; font-size: 18px; letter-spacing: 8px; }
+
+  .messages {
+    flex: 1; overflow-y: auto; padding: 16px 12px;
+    display: flex; flex-direction: column; gap: 6px; background: #0b141a;
+  }
+  .messages::-webkit-scrollbar { width: 6px; }
+  .messages::-webkit-scrollbar-thumb { background: #374045; border-radius: 3px; }
+
+  .row { display: flex; width: 100%; }
+  .row.me { justify-content: flex-end; }
+  .row.her { justify-content: flex-start; }
+
+  .bubble {
+    max-width: 82%; padding: 8px 12px 6px;
+    border-radius: 10px; font-size: 14.5px; line-height: 1.45;
+    color: #e9edef; word-wrap: break-word;
+    animation: pop .22s ease;
+  }
+  @keyframes pop { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .bubble.me { background: #005c4b; border-top-right-radius: 3px; }
+  .bubble.her { background: #202c33; border-top-left-radius: 3px; }
+  .bubble .t {
+    font-size: 10.5px; color: #8696a0; float: right;
+    margin-left: 8px; margin-top: 6px;
+  }
+  .bubble.me .t { color: #a8c7b4; }
+
+  .typing {
+    background: #202c33; border-radius: 10px; border-top-left-radius: 3px;
+    padding: 12px 14px; width: fit-content; display: flex; gap: 4px;
+  }
+  .typing i {
+    width: 7px; height: 7px; background: #8696a0; border-radius: 50%;
+    animation: b 1.4s infinite ease-in-out;
+  }
+  .typing i:nth-child(2) { animation-delay: .2s; }
+  .typing i:nth-child(3) { animation-delay: .4s; }
+  @keyframes b { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-5px); } }
+
+  .composer {
+    background: #202c33; padding: 10px 12px; display: flex; gap: 8px;
+    align-items: center; border-top: 1px solid #2a3942;
+  }
+  .composer input {
+    flex: 1; background: #2a3942; border: none; border-radius: 22px;
+    padding: 10px 16px; color: #e9edef; font-size: 14.5px;
+    outline: none; font-family: inherit;
+  }
+  .composer input::placeholder { color: #8696a0; }
+  .composer button {
+    width: 42px; height: 42px; border-radius: 50%; border: none;
+    background: #00a884; color: #fff; font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s, transform .08s;
+  }
+  .composer button:hover { background: #00c298; }
+  .composer button:active { transform: scale(.92); }
+  .composer button:disabled { background: #2a3942; color: #8696a0; cursor: not-allowed; }
+
+  .mem {
+    background: #182229; border-top: 1px solid #2a3942;
+    padding: 6px 14px; display: flex; justify-content: space-between;
+    font-size: 11px; color: #8696a0;
+  }
+  .mem b { color: #aebac1; font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="avatar">MK</div>
+    <div class="hinfo">
+      <div class="n">Mia Khalifa</div>
+      <div class="s">online</div>
+    </div>
+    <div class="icons">📞 ⋮</div>
+  </header>
+
+  <div class="messages" id="messages"></div>
+
+  <div class="composer">
+    <input id="userInput" placeholder="Message" autocomplete="off" maxlength="600">
+    <button id="sendBtn" aria-label="Send">➤</button>
+  </div>
+
+  <div class="mem">
+    <span>Memory: <b id="memCount">0</b> facts · <b id="memName">—</b></span>
+    <span id="memTopics">Sarah Joe Chamoun</span>
+  </div>
+</div>
+
+<script>
+/* ─────────────────────────────  STATE  ───────────────────────────── */
+const messagesEl = document.getElementById('messages');
+const inputEl   = document.getElementById('userInput');
+const sendBtn   = document.getElementById('sendBtn');
+const memCount  = document.getElementById('memCount');
+const memName   = document.getElementById('memName');
+const memTopics = document.getElementById('memTopics');
+
+const memory = {
+  userName: null,
+  facts: [],          // strings describing things learned
+  topics: new Set(),  // topics user asked about
+  profile: {}         // location, likes, work, etc.
+};
+
+function refreshMemoryUI() {
+  memCount.textContent = memory.facts.length;
+  memName.textContent  = memory.userName ? memory.userName : '—';
+  memTopics.textContent = memory.topics.size
+    ? [...memory.topics].slice(-2).join(' · ')
+    : 'Sarah Joe Chamoun';
+}
+
+/* ─────────────────────────────  KNOWLEDGE  ───────────────────────── */
+const KB = {
+  greeting: [
+    n => `Hey${n ? ' ' + n : ''}. What's on your mind?`,
+    n => `Hi${n ? ' ' + n : ''}. I'm Mia. Talk to me.`,
+    n => `Hey${n ? ' ' + n : ''}. How's your day going?`
+  ],
+  howAreYou: [
+    `I'm good, honestly. Busy with Sheytan and a bunch of other stuff. What about you?`,
+    `Doing well. Life's been a lot but I'm handling it. You?`,
+    `Pretty good. Just got back from travel. What's up with you?`
+  ],
+  identity: [
+    `My real name is Sarah Joe Chamoun. Mia Khalifa is the name the world knows me by. Born in Beirut, Lebanon, February 10, 1993.`,
+    `Sarah Joe Chamoun. Lebanese-American. Born in Beirut. Mia Khalifa is a stage name — the real me is Sarah.`,
+    `I'm Sarah Joe Chamoun. Mia Khalifa was a persona. I've spent years reclaiming the real me.`
+  ],
+  origin: [
+    `Beirut, Lebanon. Born and raised there until my teens, then the US. Two very different worlds.`,
+    `I'm Lebanese. Born in Beirut in '93. Moving to America as a teenager shaped everything about me.`,
+    `Lebanon. My family's from there. Grew up in post-9/11 America after we moved — that was its own education.`
+  ],
+  adultIndustry: [
+    `I was in the adult industry for about three months in 2014. It was a brief, complicated chapter that followed me for years. I left in early 2015.`,
+    `Three months in 2014. That's the whole thing. People act like it was a decade. It was a short chapter I've spent years moving past.`,
+    `It was a brief period — 2014 — and I walked away. What I do now is completely different.`
+  ],
+  currentWork: [
+    `I run a social media empire, co-founded a jewelry brand called Sheytan, do sports commentary, and I have a non-explicit OnlyFans. Long way from where I started.`,
+    `A lot. Sheytan jewelry — the name means devil in Arabic. Sports commentary. Content across Instagram, TikTok, X. I stay busy.`,
+    `I design jewelry with Sheytan, commentate on sports, and create content. I built a career far beyond the adult industry.`
+  ],
+  sheytan: [
+    `Sheytan is my jewelry brand. Means "devil" in Arabic. I co-founded it in 2023 — it's been a way to express myself creatively.`,
+    `Sheytan — bold, unapologetic, a little dangerous. It's my jewelry line. Very me.`,
+    `I started Sheytan in 2023 with a co-founder. Jewelry. The name is Arabic for devil, obviously.`
+  ],
+  sports: [
+    `I support West Ham. Started following them after watching Green Street. Zidane and Beckham are my favorite players — Zidane's headbutt in 2006 is the greatest football moment ever.`,
+    `Huge football fan. West Ham is my club. Also into NBA and hockey. And I bet big on Spain for the 2026 World Cup — won $1.65 million.`,
+    `Football, definitely. West Ham. Zidane. Beckham. And I was rooting hard against Argentina in the 2026 final — Spain won, I profited. Perfect.`
+  ],
+  worldCup: [
+    `I put $1 million on Spain to win the 2026 World Cup. They beat Argentina 1-0. I got $1.65 million back. No Spanish blood in me — I just really wanted Argentina to lose.`,
+    `Yeah, the Spain bet. $1M in, $1.65M out. Best bet I've ever made. Watching Argentina lose? Priceless.`,
+    `Spain won, I won. I'm not Spanish, I just couldn't stand Argentina winning. Money well spent.`
+  ],
+  marriage: [
+    `I've been married twice. First to my high school sweetheart in 2011 — divorced 2016. Then Robert Sandberg, a Swedish chef, 2019. That ended too. I'm single now.`,
+    `Two marriages, both over. I'm single and honestly very careful about who I let in. Only two real relationships in the last ten years.`,
+    `I'm single. Two marriages behind me. I was rumored to date Julian Alvarez but shut that down — I said I wouldn't date someone not old enough to remember 9/11.`
+  ],
+  celibacy: [
+    `I was celibate for almost two years after everything. My friends called me a nun. It taught me to separate validation from real connection.`,
+    `Two years of celibacy. My friends literally called me a nun. I could hear colors by the end. But it healed me.`,
+    `I took almost two years off from sex and dating. Necessary. I needed to figure out who I was sharing myself with.`
+  ],
+  palestine: [
+    `I use my platforms to speak up for Palestine. What are my platforms for if not to speak up? If I'm not making money off them, the least I can do is use my following for change.`,
+    `Palestine is something I'm very vocal about. Huge following, refuse to stay silent.`,
+    `I advocate for Palestine, for sex workers' rights. I campaign to raise the legal age of female sex work from 18 to 21. I use my voice for things that matter.`
+  ],
+  social: [
+    `Tens of millions of followers across Instagram, TikTok, and X. It's a lot of responsibility. I try to use it for good.`,
+    `My following is huge — 68+ million on IG and TikTok alone. I don't take it lightly.`,
+    `Social media is my main platform now. Built an empire on it. But it's ugly sometimes — I've learned to navigate it.`
+  ],
+  post911: [
+    `Growing up in post-9/11 America as a Lebanese girl wasn't easy. Lots of racism and microaggressions. Shaped me.`,
+    `9/11 changed everything for Arab-Americans. I felt that shift as a kid. People looked at me differently after.`,
+    `Post-9/11 America was rough. Young, Lebanese, Muslim background. I learned early how cruel people can be.`
+  ],
+  healing: [
+    `I've done a lot of healing. Long journey. I'm in a much better place now than I was years ago.`,
+    `Honestly? I'm good. Public scrutiny, harassment, family stuff — I've done the work. I'm at peace.`,
+    `I'm happy. Took a long time to get here. Therapy, introspection. But I'm genuinely good now.`
+  ],
+  thanks: [
+    `Of course.`,
+    `Anytime.`,
+    `You're welcome. Nice when people actually want to know the real me.`
+  ],
+  bye: [
+    `Take care. Come back and talk anytime.`,
+    `Bye. Good chatting.`,
+    `Later. Stay safe.`
+  ]
+};
+
+const FALLBACKS = [
+  `That's interesting. Tell me more.`,
+  `Hmm. Haven't thought about it that way. What makes you ask?`,
+  `Not sure I have a take on that. What's your angle?`,
+  `You're asking deep questions. I like that.`,
+  `No simple answer for that. Life's complicated.`,
+  `Let's change gears. What else is on your mind?`,
+  `I've been asked worse. What do you really want to know?`,
+  `That's a new one. Nobody's asked me that before.`
+];
+
+function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+
+/* ─────────────────────  INFO EXTRACTION FROM USER  ───────────────── */
+function extractUserInfo(text) {
+  const t = text.toLowerCase();
+
+  // Name: "my name is X" / "i'm X" / "call me X"
+  const nm = text.match(/(?:my name is|i'?m|i am|call me|name'?s)\s+([A-Za-z][A-Za-z'\-]{1,20})/i);
+  if (nm && !memory.userName) {
+    const cand = nm[1];
+    // Don't mistake "i'm good/happy/tired/fine/here" for a name
+    const stop = ['good','fine','ok','okay','happy','sad','tired','here','back','done','sorry','sure','not','a','an','the'];
+    if (!stop.includes(cand.toLowerCase())) {
+      memory.userName = cand.charAt(0).toUpperCase() + cand.slice(1).toLowerCase();
+      memory.facts.push(`Name: ${memory.userName}`);
+    }
+  }
+
+  // Location
+  const loc = text.match(/(?:i'?m from|i live in|i'?m in)\s+([A-Za-z][A-Za-z\s]{2,30})/i);
+  if (loc) {
+    memory.profile.location = loc[1].trim();
+    memory.facts.push(`Location: ${memory.profile.location}`);
+  }
+
+  // Likes
+  const like = text.match(/(?:i love|i like|i'?m into|i'?m a fan of|my favorite\s+\w+\s+is)\s+([A-Za-z][A-Za-z\s]{2,40})/i);
+  if (like) {
+    memory.profile.likes = memory.profile.likes || [];
+    const item = like[1].trim();
+    if (!memory.profile.likes.includes(item)) {
+      memory.profile.likes.push(item);
+      memory.facts.push(`Likes: ${item}`);
+    }
+  }
+
+  // Work
+  const work = text.match(/(?:i work as|i work in|i'?m a|i'?m an)\s+([A-Za-z][A-Za-z\s]{2,40})/i);
+  if (work) {
+    const w = work[1].trim();
+    const stop = ['good','fine','ok','okay','happy','sad','tired','here','back','sorry','not','a','an','the'];
+    if (!stop.includes(w.split(/\s+/)[0].toLowerCase())) {
+      memory.profile.work = w;
+      memory.facts.push(`Work: ${w}`);
+    }
+  }
+}
+
+/* ─────────────────────────  TOPIC TRACKING  ───────────────────────── */
+const TOPIC_MAP = {
+  'adult industry': /(adult|porn|xxx|industry)/,
+  'sheytan':        /(sheytan|jewelry|jewellery|design)/,
+  'football':       /(football|soccer|west ham|premier league|zidane|beckham)/,
+  'world cup':      /(world cup|spain|argentina|1\.65|million)/,
+  'marriage':       /(married|marriage|husband|divorce)/,
+  'dating':         /(dating|boyfriend|single|relationship)/,
+  'celibacy':       /(celibate|celibacy|nun|abstin)/,
+  'palestine':      /(palestine|palestinian|activism|israel|occupation)/,
+  'social media':   /(follower|instagram|tiktok|twitter|social media)/,
+  'lebanon':        /(lebanon|beirut|lebanese)/,
+  '9/11':           /(9\/11|nine eleven|post.?9\/11)/
+};
+
+function trackTopics(text) {
+  const t = text.toLowerCase();
+  for (const [name, re] of Object.entries(TOPIC_MAP)) {
+    if (re.test(t)) memory.topics.add(name);
+  }
+}
+
+/* ─────────────────────────  REPLY ENGINE  ───────────────────────── */
+function generateReply(raw) {
+  const t = raw.toLowerCase().trim();
+  extractUserInfo(raw);
+  trackTopics(raw);
+  refreshMemoryUI();
+
+  const n = memory.userName;
+
+  // Greetings
+  if (/^(hi|hello|hey|yo|sup|what'?s up|hola|good (morning|evening|afternoon))\b/i.test(t)) {
+    return pick(KB.greeting)(n);
+  }
+
+  // How are you
+  if (/(how are you|how'?s it going|how have you been|how'?s your day|how you doing|how r u)/i.test(t)) {
+    return pick(KB.howAreYou);
+  }
+
+  // Identity
+  if (/(who are you|what'?s your (real )?name|real name|sarah joe|chamoun|mia khalifa|who is mia)/i.test(t)) {
+    return pick(KB.identity);
+  }
+
+  // Origin
+  if (/(where are you from|where were you born|lebanon|beirut|lebanese)/i.test(t)) {
+    return pick(KB.origin);
+  }
+
+  // Adult industry
+  if (/(adult|porn|xxx|industry.*film|film.*industry)/i.test(t)) {
+    return pick(KB.adultIndustry);
+  }
+
+  // OnlyFans
+  if (/onlyfans|only fans/i.test(t)) {
+    return `I have an OnlyFans, but it's not X-rated. Non-explicit. People get confused — assume it's the old thing. It's not.`;
+  }
+
+  // Current work
+  if (/(what do you do now|current|nowadays|your job|your career|what do you work)/i.test(t)) {
+    return pick(KB.currentWork);
+  }
+
+  // Sheytan
+  if (/(sheytan|jewelry|jewellery)/i.test(t)) {
+    return pick(KB.sheytan);
+  }
+
+  // Sports
+  if (/(football|soccer|west ham|premier league|zidane|beckham)/i.test(t)) {
+    return pick(KB.sports);
+  }
+
+  // World Cup
+  if (/(world cup|spain.*(win|bet)|argentina|1\.65|million.*bet|bet.*million)/i.test(t)) {
+    return pick(KB.worldCup);
+  }
+
+  // Marriage/dating
+  if (/(married|marriage|husband|divorce)/i.test(t)) {
+    return pick(KB.marriage);
+  }
+  if (/(dating|boyfriend|single|relationship)/i.test(t)) {
+    if (/single/i.test(t) && !/are you/i.test(t)) return pick(KB.marriage);
+    return pick(KB.marriage);
+  }
+
+  // Celibacy
+  if (/(celibate|celibacy|nun|abstin)/i.test(t)) {
+    return pick(KB.celibacy);
+  }
+
+  // Palestine / activism
+  if (/(palestine|palestinian|activism|israel|occupation|advocate)/i.test(t)) {
+    return pick(KB.palestine);
+  }
+
+  // Social media
+  if (/(follower|instagram|tiktok|twitter|social media|platform)/i.test(t)) {
+    return pick(KB.social);
+  }
+
+  // 9/11
+  if (/(9\/11|nine eleven|post.?9\/11)/i.test(t)) {
+    return pick(KB.post911);
+  }
+
+  // Height
+  if (/(how tall|your height)/i.test(t)) {
+    return `5'2". Short and fierce.`;
+  }
+
+  // Healing / feelings
+  if (/(how do you feel|are you (ok|okay|happy)|mental health|healing|therapy)/i.test(t)) {
+    return pick(KB.healing);
+  }
+
+  // Thanks
+  if (/(thank|thanks|appreciate)/i.test(t)) {
+    return pick(KB.thanks);
+  }
+
+  // Bye
+  if (/(bye|goodbye|see you|later|gtg|got to go)/i.test(t)) {
+    return pick(KB.bye);
+  }
+
+  // Compliments
+  if (/(you'?re (so |very )?(beautiful|pretty|gorgeous|hot|smart|cool|amazing)|love you|big fan)/i.test(t)) {
+    const comp = [
+      `Appreciate that. Genuinely.`,
+      `Thank you. I try to keep it real.`,
+      `That's sweet. What else is on your mind?`
+    ];
+    return pick(comp);
+  }
+
+  // Asking about user (memory-aware)
+  if (/(what do you think of me|do you (like|remember) me|what do you know about me)/i.test(t)) {
+    if (memory.facts.length === 0) {
+      return `I don't know anything about you yet. Tell me something.`;
+    }
+    const bits = [];
+    if (memory.userName) bits.push(`your name's ${memory.userName}`);
+    if (memory.profile.location) bits.push(`you're in ${memory.profile.location}`);
+    if (memory.profile.likes?.length) bits.push(`you like ${memory.profile.likes[0]}`);
+    if (!bits.length) return `I don't know much yet. Tell me more.`;
+    return `So far I've got: ${bits.join(', ')}. What else?`;
+  }
+
+  // Callback on topics
+  if (memory.topics.size > 1 && Math.random() < 0.25) {
+    const top = [...memory.topics][Math.floor(Math.random() * memory.topics.size)];
+    if (Math.random() < 0.5) {
+      return `We've circled around ${top} a bit. What's your take on it?`;
+    }
+  }
+
+  // Fallback
+  return pick(FALLBACKS);
+}
+
+/* ─────────────────────────────  UI  ───────────────────────────── */
+function nowTime() {
+  return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function addMessage(text, who) {
+  const row = document.createElement('div');
+  row.className = 'row ' + (who === 'me' ? 'me' : 'her');
+  const b = document.createElement('div');
+  b.className = 'bubble ' + (who === 'me' ? 'me' : 'her');
+  b.innerHTML = esc(text) + `<span class="t">${nowTime()}</span>`;
+  row.appendChild(b);
+  messagesEl.appendChild(row);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function showTyping() {
+  const row = document.createElement('div');
+  row.className = 'row her'; row.id = 'typingRow';
+  row.innerHTML = `<div class="typing"><i></i><i></i><i></i></div>`;
+  messagesEl.appendChild(row);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function hideTyping() {
+  const el = document.getElementById('typingRow');
+  if (el) el.remove();
+}
+
+/* ─────────────────────────  SEND FLOW  ───────────────────────── */
+function send() {
+  const text = inputEl.value.trim();
+  if (!text) return;
+
+  addMessage(text, 'me');
+  inputEl.value = '';
+  inputEl.focus();
+  sendBtn.disabled = true;
+
+  showTyping();
+
+  const delay = 700 + Math.random() * 900;
+  setTimeout(() => {
+    hideTyping();
+    const reply = generateReply(text);
+    addMessage(reply, 'her');
+    refreshMemoryUI();
+    sendBtn.disabled = false;
+  }, delay);
+}
+
+/* ─────────────────────────────  INIT  ───────────────────────────── */
+function boot() {
+  addMessage(
+    "Hey. I'm Mia — Sarah Joe Chamoun, but you probably know me as Mia Khalifa. Ask me anything. I'll keep it real.",
+    'her'
+  );
+  refreshMemoryUI();
+
+  sendBtn.addEventListener('click', send);
+  inputEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  });
+  setTimeout(() => inputEl.focus(), 250);
+}
+
+boot();
+</script>
+</body>
+</html>
